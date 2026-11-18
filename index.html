@@ -1,1 +1,249 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizapro - Cotizaciones fáciles</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
+header{background:#172554;color:white;padding:24px;text-align:center}
+header h1{margin:0;font-size:30px}
+header p{margin:8px 0 0;color:#cbd5e1}
+main{max-width:900px;margin:25px auto;padding:15px}
+.card{background:white;padding:22px;border-radius:14px;margin-bottom:18px;box-shadow:0 3px 14px #0000000b}
+h2{font-size:19px;margin-top:0;color:#1e3a8a}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:13px;font-weight:bold;display:block;margin-bottom:6px}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px}
+button{border:0;border-radius:8px;padding:12px 17px;font-weight:bold;cursor:pointer;margin:5px 3px}
+.primary{background:#2563eb;color:white}
+.secondary{background:#e2e8f0;color:#172033}
+.danger{background:#fee2e2;color:#991b1b}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px 5px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13px}
+th{color:#475569}
+td input{padding:8px;min-width:65px}
+.total{text-align:right;font-size:21px;font-weight:bold;margin-top:18px}
+.actions{display:flex;flex-wrap:wrap;gap:5px}
+small{color:#64748b}
+@media(max-width:600px){
+.grid{grid-template-columns:1fr}
+.card{padding:15px}
+table{font-size:12px}
+th,td{padding:7px 3px}
+}
+@media print{
+body{background:white}
+header{background:#172554!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.no-print{display:none!important}
+.card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+main{margin:0;max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>📋 Cotizapro</h1>
+<p>Crea cotizaciones profesionales en minutos</p>
+</header>
+
+<main>
+
+<div class="card">
+<h2>1. Datos de tu negocio</h2>
+<div class="grid">
+<div>
+<label>Nombre del negocio</label>
+<input id="business" placeholder="Mi empresa">
+</div>
+<div>
+<label>Teléfono</label>
+<input id="phone" placeholder="300 000 0000">
+</div>
+<div>
+<label>Correo electrónico</label>
+<input id="email" placeholder="correo@empresa.com">
+</div>
+<div>
+<label>Número de cotización</label>
+<input id="number" readonly>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>2. Datos del cliente</h2>
+<div class="grid">
+<div>
+<label>Nombre del cliente</label>
+<input id="client" placeholder="Nombre del cliente">
+</div>
+<div>
+<label>Teléfono del cliente</label>
+<input id="clientPhone" placeholder="Teléfono">
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>3. Productos o servicios</h2>
+<div class="no-print">
+<button class="primary" onclick="addItem()">+ Agregar producto</button>
+</div>
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Descripción</th>
+<th>Cantidad</th>
+<th>Precio unitario</th>
+<th>Subtotal</th>
+<th class="no-print">Acción</th>
+</tr>
+</thead>
+<tbody id="items"></tbody>
+</table>
+</div>
+<div class="total">TOTAL: <span id="total">$0</span> COP</div>
+</div>
+
+<div class="card">
+<h2>4. Condiciones de la cotización</h2>
+<div class="grid">
+<div>
+<label>Validez (días)</label>
+<input id="validity" type="number" value="15">
+</div>
+<div>
+<label>Fecha</label>
+<input id="date" type="date">
+</div>
+</div>
+<br>
+<label>Observaciones</label>
+<input id="notes" placeholder="Gracias por confiar en nosotros">
+</div>
+
+<div class="card no-print">
+<h2>5. Acciones</h2>
+<div class="actions">
+<button class="primary" onclick="saveQuote()">💾 Guardar cotización</button>
+<button class="secondary" onclick="window.print()">📄 Descargar PDF</button>
+<button class="secondary" onclick="newQuote()">Nueva cotización</button>
+<button class="secondary" onclick="showSaved()">Ver cotizaciones guardadas</button>
+</div>
+<div id="saved" style="margin-top:15px"></div>
+</div>
+
+</main>
+
+<script>
+let count=0;
+
+const money=n=>new Intl.NumberFormat('es-CO',{
+style:'currency',currency:'COP',
+maximumFractionDigits:0
+}).format(n);
+
+function addItem(description='',quantity=1,price=0){
+const id=++count;
+const row=document.createElement('tr');
+row.dataset.id=id;
+row.innerHTML=`
+<td><input class="description" placeholder="Producto o servicio" value="${description}"></td>
+<td><input class="quantity" type="number" min="1" value="${quantity}"></td>
+<td><input class="price" type="number" min="0" value="${price}"></td>
+<td class="subtotal">$0</td>
+<td class="no-print"><button class="danger" onclick="this.closest('tr').remove();calculate()">X</button></td>`;
+document.getElementById('items').appendChild(row);
+row.querySelectorAll('input').forEach(input=>{
+input.addEventListener('input',calculate);
+});
+calculate();
+}
+
+function calculate(){
+let total=0;
+document.querySelectorAll('#items tr').forEach(row=>{
+const q=Number(row.querySelector('.quantity').value)||0;
+const p=Number(row.querySelector('.price').value)||0;
+const subtotal=q*p;
+row.querySelector('.subtotal').textContent=money(subtotal);
+total+=subtotal;
+});
+document.getElementById('total').textContent=money(total);
+return total;
+}
+
+function newNumber(){
+return 'COT-'+Date.now().toString().slice(-8);
+}
+
+function newQuote(){
+document.getElementById('client').value='';
+document.getElementById('clientPhone').value='';
+document.getElementById('notes').value='';
+document.getElementById('items').innerHTML='';
+document.getElementById('number').value=newNumber();
+addItem();
+}
+
+function getQuote(){
+return {
+business:document.getElementById('business').value,
+phone:document.getElementById('phone').value,
+email:document.getElementById('email').value,
+number:document.getElementById('number').value,
+client:document.getElementById('client').value,
+clientPhone:document.getElementById('clientPhone').value,
+validity:document.getElementById('validity').value,
+date:document.getElementById('date').value,
+notes:document.getElementById('notes').value,
+items:[...document.querySelectorAll('#items tr')].map(row=>({
+description:row.querySelector('.description').value,
+quantity:Number(row.querySelector('.quantity').value),
+price:Number(row.querySelector('.price').value)
+})),
+total:calculate()
+};
+}
+
+function saveQuote(){
+const q=getQuote();
+if(!q.client){alert('Escribe el nombre del cliente');return}
+if(!q.items.length){alert('Agrega al menos un producto');return}
+let quotes=JSON.parse(localStorage.getItem('cotizapro')||'[]');
+quotes.push(q);
+localStorage.setItem('cotizapro',JSON.stringify(quotes));
+alert('¡Cotización guardada correctamente!');
+}
+
+function showSaved(){
+const quotes=JSON.parse(localStorage.getItem('cotizapro')||'[]');
+const box=document.getElementById('saved');
+if(!quotes.length){box.textContent='Todavía no tienes cotizaciones guardadas.';return}
+box.innerHTML='<h3>Cotizaciones guardadas</h3>';
+quotes.forEach(q=>{
+const div=document.createElement('div');
+div.style.padding='10px';
+div.style.borderBottom='1px solid #ddd';
+const title=document.createElement('strong');
+title.textContent=q.number+' - '+q.client;
+const detail=document.createElement('div');
+detail.textContent=money(q.total);
+div.append(title,detail);
+box.appendChild(div);
+});
+}
+
+document.getElementById('date').value=
+new Date().toISOString().slice(0,10);
+document.getElementById('number').value=newNumber();
+addItem();
+
+</script>
+</body>
+</html>
