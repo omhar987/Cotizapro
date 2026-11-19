@@ -411,6 +411,7 @@ footer {
   <input id="authPassword" type="password" placeholder="Mínimo 6 caracteres">
 
   <button type="button" onclick="registerUser()">Crear cuenta</button>
+  <button type="button" onclick="resendConfirmation()">Reenviar correo de confirmación</button>
   <button type="button" onclick="loginUser()">Iniciar sesión</button>
   <button type="button" onclick="logoutUser()">Cerrar sesión</button>
 
@@ -829,6 +830,33 @@ async function logoutUser() {
   }
 
   message.textContent = 'Has cerrado sesión.';
+}
+  // REENVIAR CORREO DE CONFIRMACIÓN
+async function resendConfirmation() {
+  const email = document.getElementById('authEmail').value.trim();
+  const message = document.getElementById('authMessage');
+
+  if (!email) {
+    message.textContent = 'Escribe tu correo electrónico.';
+    return;
+  }
+
+  message.textContent = 'Enviando correo...';
+
+  const { error } = await supabaseClient.auth.resend({
+    type: 'signup',
+    email: email,
+    options: {
+      emailRedirectTo: 'https://omhar987.github.io/Cotizapro/'
+    }
+  });
+
+  if (error) {
+    message.textContent = 'Error: ' + error.message;
+    return;
+  }
+
+  message.textContent = 'Solicitud enviada. Revisa tu correo y la carpeta de spam.';
 }
 </script>
 </body>
