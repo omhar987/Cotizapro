@@ -397,7 +397,25 @@ footer {
 </header>
 
 <main>
+  <section id="authSection" class="card" style="margin-bottom:20px;">
+  <h2>Bienvenido a Cotizapro</h2>
+  <p>Inicia sesión o crea una cuenta para tu negocio.</p>
 
+  <label>Nombre del negocio (solo al registrarte)</label>
+  <input id="businessName" type="text" placeholder="Mi empresa">
+
+  <label>Correo electrónico</label>
+  <input id="authEmail" type="email" placeholder="correo@ejemplo.com">
+
+  <label>Contraseña</label>
+  <input id="authPassword" type="password" placeholder="Mínimo 6 caracteres">
+
+  <button type="button" onclick="registerUser()">Crear cuenta</button>
+  <button type="button" onclick="loginUser()">Iniciar sesión</button>
+  <button type="button" onclick="logoutUser()">Cerrar sesión</button>
+
+  <p id="authMessage"></p>
+</section>
   <div class="welcome">
     <h2>Crear nueva cotización</h2>
     <p>Completa los datos y prepara una cotización para tu cliente.</p>
