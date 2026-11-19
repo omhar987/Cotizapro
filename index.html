@@ -722,5 +722,15 @@ document.getElementById('number').value = newNumber();
 addItem();
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://esoqoosxarhsqhfpiamp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_kC7yLcSj9tjB-IHx3Z3ZHA_AhlR1F6D';
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
 </body>
 </html>
