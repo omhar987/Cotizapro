@@ -749,6 +749,86 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+  // REGISTRO DE NUEVOS NEGOCIOS
+async function registerUser() {
+  const name = document.getElementById('businessName').value.trim();
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const message = document.getElementById('authMessage');
+
+  if (!name || !email || !password) {
+    message.textContent = 'Completa todos los campos.';
+    return;
+  }
+
+  if (password.length < 6) {
+    message.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    return;
+  }
+
+  message.textContent = 'Creando cuenta...';
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      data: {
+        business_name: name
+      }
+    }
+  });
+
+  if (error) {
+    message.textContent = 'Error: ' + error.message;
+    return;
+  }
+
+  if (data.session) {
+    message.textContent = '¡Cuenta creada! Ya puedes comenzar.';
+  } else {
+    message.textContent = 'Cuenta creada. Revisa tu correo para confirmar el registro.';
+  }
+}
+
+// INICIAR SESIÓN
+async function loginUser() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const message = document.getElementById('authMessage');
+
+  if (!email || !password) {
+    message.textContent = 'Escribe tu correo y contraseña.';
+    return;
+  }
+
+  message.textContent = 'Iniciando sesión...';
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    message.textContent = 'Error: ' + error.message;
+    return;
+  }
+
+  message.textContent = '¡Sesión iniciada correctamente!';
+}
+
+// CERRAR SESIÓN
+async function logoutUser() {
+  const message = document.getElementById('authMessage');
+
+  const { error } = await supabaseClient.auth.signOut();
+
+  if (error) {
+    message.textContent = 'Error: ' + error.message;
+    return;
+  }
+
+  message.textContent = 'Has cerrado sesión.';
+}
 </script>
 </body>
 </html>
