@@ -812,40 +812,93 @@ async function saveQuote() {
   }
 }
 
-function showSaved() {
-  const quotes = JSON.parse(localStorage.getItem('cotizapro') || '[]');
+
+async function showSaved() {
   const box = document.getElementById('saved');
+  box.innerHTML = 'Cargando cotizaciones...';
 
-  box.innerHTML = '';
+  try {
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser();
 
-  if (!quotes.length) {
-    box.textContent = 'Todavía no tienes cotizaciones guardadas.';
-    return;
+    if (userError || !userData.user) {
+      box.textContent = 'Inicia sesión para ver tus cotizaciones.';
+      return;
+    }
+
+    const { data: business, error: businessError } =
+      await supabaseClient
+        .from('businesses')
+        .select('id')
+        .eq('owner_id', userData.user.id)
+        .maybeSingle();
+
+    if (businessError) throw businessError;
+
+    if (!business) {
+      box.textContent = 'Todavía no tienes un negocio registrado.';
+      return;
+    }
+
+    const { data: quotes, error: quotesError } =
+      await supabaseClient
+        .from('quotes')
+        .select(`
+          id,
+          quote_number,
+          quote_date,
+          total,
+          status,
+          clients (
+            name
+          )
+        `)
+        .eq('business_id', business.id)
+        .order('created_at', { ascending: false });
+
+    if (quotesError) throw quotesError;
+
+    box.innerHTML = '';
+
+    if (!quotes || !quotes.length) {
+      box.textContent = 'Todavía no tienes cotizaciones guardadas.';
+      return;
+    }
+
+    const title = document.createElement('h3');
+    title.textContent = 'Cotizaciones guardadas';
+    title.style.color = '#142b4a';
+    box.appendChild(title);
+
+    quotes.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'saved-item';
+
+      const info = document.createElement('div');
+
+      const name = document.createElement('strong');
+      name.textContent =
+        (q.quote_number || 'Sin número') + ' - ' +
+        (q.clients?.name || 'Cliente');
+
+      const detail = document.createElement('small');
+      detail.textContent =
+        'Fecha: ' + (q.quote_date || 'No indicada') +
+        ' · Total: ' + money(q.total) +
+        ' · Estado: ' + (q.status || 'draft');
+
+      info.append(name, detail);
+      div.appendChild(info);
+      box.appendChild(div);
+    });
+
+  } catch (error) {
+    console.error('Error al consultar cotizaciones:', error);
+    box.textContent =
+      'No se pudieron cargar las cotizaciones: ' + error.message;
   }
-
-  const title = document.createElement('h3');
-  title.textContent = 'Cotizaciones guardadas';
-  title.style.color = '#142b4a';
-  box.appendChild(title);
-
-  quotes.slice().reverse().forEach(q => {
-    const div = document.createElement('div');
-    div.className = 'saved-item';
-
-    const info = document.createElement('div');
-
-    const name = document.createElement('strong');
-    name.textContent = q.number + ' - ' + q.client;
-
-    const detail = document.createElement('small');
-    detail.textContent = 'Fecha: ' + (q.date || 'No indicada') +
-      ' · Total: ' + money(q.total);
-
-    info.append(name, detail);
-    div.appendChild(info);
-    box.appendChild(div);
-  });
 }
+
 
 document.getElementById('date').value = localDate();
 document.getElementById('number').value = newNumber();
