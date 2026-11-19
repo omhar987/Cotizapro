@@ -749,7 +749,15 @@ const SUPABASE_KEY = 'sb_publishable_kC7yLcSj9tjB-IHx3Z3ZHA_AhlR1F6D';
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
-  SUPABASE_KEY
+  SUPABASE_KEY,
+  {
+    auth: {
+      flowType: 'implicit',
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  }
 );
   // REGISTRO DE NUEVOS NEGOCIOS
 async function registerUser() {
