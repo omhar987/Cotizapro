@@ -849,9 +849,7 @@ async function showSaved() {
           quote_date,
           total,
           status,
-          clients (
-            name
-          )
+          clients (name)
         `)
         .eq('business_id', business.id)
         .order('created_at', { ascending: false });
@@ -860,36 +858,106 @@ async function showSaved() {
 
     box.innerHTML = '';
 
-    if (!quotes || !quotes.length) {
+    const title = document.createElement('h3');
+    title.textContent = 'Mis cotizaciones';
+    title.style.color = '#142b4a';
+    box.appendChild(title);
+
+    if (!quotes || quotes.length === 0) {
       box.textContent = 'Todavía no tienes cotizaciones guardadas.';
       return;
     }
 
-    const title = document.createElement('h3');
-    title.textContent = 'Cotizaciones guardadas';
-    title.style.color = '#142b4a';
-    box.appendChild(title);
+    const quoteIds = quotes.map(q => q.id);
+
+    const { data: items, error: itemsError } =
+      await supabaseClient
+        .from('quote_items')
+        .select('*')
+        .in('quote_id', quoteIds);
+
+    if (itemsError) throw itemsError;
 
     quotes.forEach(q => {
-      const div = document.createElement('div');
-      div.className = 'saved-item';
+      const card = document.createElement('div');
+      card.className = 'saved-item';
+      card.style.padding = '18px';
+      card.style.marginBottom = '15px';
+      card.style.borderRadius = '12px';
+      card.style.border = '1px solid #dce4ed';
+      card.style.background = '#ffffff';
 
-      const info = document.createElement('div');
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.flexWrap = 'wrap';
+      header.style.gap = '8px';
 
       const name = document.createElement('strong');
       name.textContent =
         (q.quote_number || 'Sin número') + ' - ' +
         (q.clients?.name || 'Cliente');
+      name.style.color = '#142b4a';
 
-      const detail = document.createElement('small');
-      detail.textContent =
-        'Fecha: ' + (q.quote_date || 'No indicada') +
-        ' · Total: ' + money(q.total) +
-        ' · Estado: ' + (q.status || 'draft');
+      const status = document.createElement('span');
+      status.textContent = q.status === 'draft' ? 'Borrador' : q.status;
+      status.style.color = '#087e8b';
+      status.style.fontWeight = 'bold';
 
-      info.append(name, detail);
-      div.appendChild(info);
-      box.appendChild(div);
+      header.append(name, status);
+      card.appendChild(header);
+
+      const date = document.createElement('p');
+      date.textContent = 'Fecha: ' + (q.quote_date || 'No indicada');
+      date.style.color = '#64748b';
+      card.appendChild(date);
+
+      const total = document.createElement('h3');
+      total.textContent = 'Total: ' + money(q.total);
+      total.style.color = '#087e8b';
+      card.appendChild(total);
+
+      const toggle = document.createElement('details');
+      toggle.style.marginTop = '12px';
+
+      const summary = document.createElement('summary');
+      summary.textContent = 'Ver detalle de productos';
+      summary.style.cursor = 'pointer';
+      summary.style.color = '#1769aa';
+      summary.style.fontWeight = 'bold';
+      toggle.appendChild(summary);
+
+      const quoteItems = items.filter(item => item.quote_id === q.id);
+
+      if (quoteItems.length === 0) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Esta cotización no tiene productos registrados.';
+        toggle.appendChild(empty);
+      }
+
+      quoteItems.forEach(item => {
+        const row = document.createElement('div');
+        row.style.padding = '10px 0';
+        row.style.borderBottom = '1px solid #e5e7eb';
+
+        const description = document.createElement('strong');
+        description.textContent = item.description;
+
+        const detail = document.createElement('p');
+        detail.textContent =
+          'Cantidad: ' + item.quantity +
+          ' · Precio: ' + money(item.unit_price) +
+          ' · Total: ' + money(item.total);
+
+        detail.style.color = '#64748b';
+        detail.style.fontSize = '13px';
+
+        row.append(description, detail);
+        toggle.appendChild(row);
+      });
+
+      card.appendChild(toggle);
+      box.appendChild(card);
     });
 
   } catch (error) {
@@ -898,7 +966,6 @@ async function showSaved() {
       'No se pudieron cargar las cotizaciones: ' + error.message;
   }
 }
-
 
 document.getElementById('date').value = localDate();
 document.getElementById('number').value = newNumber();
