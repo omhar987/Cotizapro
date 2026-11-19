@@ -413,6 +413,7 @@ footer {
   <button type="button" onclick="registerUser()">Crear cuenta</button>
   <button type="button" onclick="resendConfirmation()">Reenviar correo de confirmación</button>
   <button type="button" onclick="loginUser()">Iniciar sesión</button>
+  <button type="button" onclick="updatePassword()">Guardar nueva contraseña</button>
   <button type="button" onclick="logoutUser()">Cerrar sesión</button>
 
   <p id="authMessage"></p>
@@ -816,6 +817,29 @@ async function loginUser() {
   }
 
   message.textContent = '¡Sesión iniciada correctamente!';
+}
+  // ACTUALIZAR CONTRASEÑA
+async function updatePassword() {
+  const password = document.getElementById('authPassword').value;
+  const message = document.getElementById('authMessage');
+
+  if (!password || password.length < 6) {
+    message.textContent = 'Escribe una contraseña de al menos 6 caracteres.';
+    return;
+  }
+
+  message.textContent = 'Actualizando contraseña...';
+
+  const { error } = await supabaseClient.auth.updateUser({
+    password: password
+  });
+
+  if (error) {
+    message.textContent = 'Error: ' + error.message;
+    return;
+  }
+
+  message.textContent = '¡Contraseña actualizada correctamente!';
 }
 
 // CERRAR SESIÓN
