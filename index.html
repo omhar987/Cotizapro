@@ -813,6 +813,7 @@ async function saveQuote() {
 }
 
 
+
 async function showSaved() {
   const box = document.getElementById('saved');
   box.innerHTML = 'Cargando cotizaciones...';
@@ -858,13 +859,45 @@ async function showSaved() {
 
     box.innerHTML = '';
 
-    const title = document.createElement('h3');
+    const heading = document.createElement('div');
+    heading.style.cssText = `
+      margin-bottom:24px;
+      padding-bottom:15px;
+      border-bottom:1px solid #e8edf5;
+    `;
+
+    const title = document.createElement('h2');
     title.textContent = 'Mis cotizaciones';
-    title.style.color = '#142b4a';
-    box.appendChild(title);
+    title.style.cssText = `
+      font-size:25px;
+      font-weight:800;
+      color:#142b4a;
+      margin:0 0 6px;
+    `;
+
+    const subtitle = document.createElement('p');
+    subtitle.textContent = 'Administra y consulta tus propuestas comerciales.';
+    subtitle.style.cssText = `
+      color:#718096;
+      font-size:14px;
+      margin:0;
+    `;
+
+    heading.append(title, subtitle);
+    box.appendChild(heading);
 
     if (!quotes || quotes.length === 0) {
-      box.textContent = 'Todavía no tienes cotizaciones guardadas.';
+      const empty = document.createElement('div');
+      empty.textContent = 'Todavía no tienes cotizaciones guardadas.';
+      empty.style.cssText = `
+        background:#f8fafc;
+        border:1px dashed #cbd5e1;
+        border-radius:16px;
+        padding:30px 20px;
+        text-align:center;
+        color:#64748b;
+      `;
+      box.appendChild(empty);
       return;
     }
 
@@ -880,68 +913,161 @@ async function showSaved() {
 
     quotes.forEach(q => {
       const card = document.createElement('div');
-      card.className = 'saved-item';
-      card.style.padding = '18px';
-      card.style.marginBottom = '15px';
-      card.style.borderRadius = '12px';
-      card.style.border = '1px solid #dce4ed';
-      card.style.background = '#ffffff';
+
+      card.style.cssText = `
+        background:#ffffff;
+        border:1px solid #e5eaf2;
+        border-radius:18px;
+        padding:22px;
+        margin-bottom:18px;
+        box-shadow:0 8px 24px rgba(15,23,42,0.06);
+        transition:box-shadow .2s ease;
+      `;
 
       const header = document.createElement('div');
-      header.style.display = 'flex';
-      header.style.justifyContent = 'space-between';
-      header.style.flexWrap = 'wrap';
-      header.style.gap = '8px';
+      header.style.cssText = `
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        flex-wrap:wrap;
+      `;
 
       const name = document.createElement('strong');
       name.textContent =
-        (q.quote_number || 'Sin número') + ' - ' +
+        (q.quote_number || 'Cotización') + ' - ' +
         (q.clients?.name || 'Cliente');
-      name.style.color = '#142b4a';
+      name.style.cssText = `
+        font-size:17px;
+        color:#142b4a;
+        font-weight:800;
+      `;
 
       const status = document.createElement('span');
-      status.textContent = q.status === 'draft' ? 'Borrador' : q.status;
-      status.style.color = '#087e8b';
-      status.style.fontWeight = 'bold';
+
+      const statusMap = {
+        draft: { label:'Borrador', bg:'#fff7ed', color:'#c2410c' },
+        sent: { label:'Enviada', bg:'#eff6ff', color:'#1d4ed8' },
+        approved: { label:'Aprobada', bg:'#ecfdf5', color:'#047857' },
+        rejected: { label:'Rechazada', bg:'#fef2f2', color:'#b91c1c' },
+        paid: { label:'Pagada', bg:'#f0fdf4', color:'#15803d' }
+      };
+
+      const currentStatus = String(q.status || 'draft').toLowerCase();
+      const statusInfo = statusMap[currentStatus] || {
+        label: currentStatus,
+        bg:'#f1f5f9',
+        color:'#475569'
+      };
+
+      status.textContent = statusInfo.label;
+      status.style.cssText = `
+        display:inline-block;
+        background:${statusInfo.bg};
+        color:${statusInfo.color};
+        padding:7px 13px;
+        border-radius:30px;
+        font-size:12px;
+        font-weight:800;
+      `;
 
       header.append(name, status);
       card.appendChild(header);
 
       const date = document.createElement('p');
-      date.textContent = 'Fecha: ' + (q.quote_date || 'No indicada');
-      date.style.color = '#64748b';
+      const dateValue = q.quote_date
+        ? String(q.quote_date).slice(0,10).split('-').reverse().join('/')
+        : 'No indicada';
+
+      date.textContent = 'Fecha: ' + dateValue;
+      date.style.cssText = `
+        color:#8492a6;
+        font-size:13px;
+        margin:13px 0 18px;
+      `;
       card.appendChild(date);
 
-      const total = document.createElement('h3');
-      total.textContent = 'Total: ' + money(q.total);
-      total.style.color = '#087e8b';
-      card.appendChild(total);
+      const totalBox = document.createElement('div');
+      totalBox.style.cssText = `
+        background:linear-gradient(135deg,#eff6ff,#f5f3ff);
+        border:1px solid #e0e7ff;
+        border-radius:15px;
+        padding:18px;
+        margin-bottom:18px;
+      `;
+
+      const totalLabel = document.createElement('div');
+      totalLabel.textContent = 'TOTAL DE LA COTIZACIÓN';
+      totalLabel.style.cssText = `
+        color:#64748b;
+        font-size:11px;
+        font-weight:800;
+        letter-spacing:1px;
+        margin-bottom:7px;
+      `;
+
+      const total = document.createElement('div');
+      total.textContent = money(q.total);
+      total.style.cssText = `
+        font-size:29px;
+        font-weight:900;
+        color:#2454d6;
+        letter-spacing:-1px;
+      `;
+
+      const currency = document.createElement('div');
+      currency.textContent = 'Valores en pesos colombianos (COP)';
+      currency.style.cssText = `
+        font-size:11px;
+        color:#8492a6;
+        margin-top:5px;
+      `;
+
+      totalBox.append(totalLabel, total, currency);
+      card.appendChild(totalBox);
 
       const toggle = document.createElement('details');
-      toggle.style.marginTop = '12px';
+      toggle.style.cssText = `
+        border-top:1px solid #edf0f5;
+        padding-top:15px;
+      `;
 
       const summary = document.createElement('summary');
       summary.textContent = 'Ver detalle de productos';
-      summary.style.cursor = 'pointer';
-      summary.style.color = '#1769aa';
-      summary.style.fontWeight = 'bold';
+      summary.style.cssText = `
+        cursor:pointer;
+        color:#2454d6;
+        font-size:14px;
+        font-weight:800;
+        outline:none;
+      `;
+
       toggle.appendChild(summary);
 
-      const quoteItems = items.filter(item => item.quote_id === q.id);
+      const quoteItems = (items || []).filter(
+        item => item.quote_id === q.id
+      );
 
       if (quoteItems.length === 0) {
         const empty = document.createElement('p');
         empty.textContent = 'Esta cotización no tiene productos registrados.';
+        empty.style.cssText = 'color:#8492a6;font-size:13px;';
         toggle.appendChild(empty);
       }
 
       quoteItems.forEach(item => {
         const row = document.createElement('div');
-        row.style.padding = '10px 0';
-        row.style.borderBottom = '1px solid #e5e7eb';
+        row.style.cssText = `
+          padding:13px 0;
+          border-bottom:1px solid #edf0f5;
+        `;
 
         const description = document.createElement('strong');
         description.textContent = item.description;
+        description.style.cssText = `
+          color:#26364b;
+          font-size:14px;
+        `;
 
         const detail = document.createElement('p');
         detail.textContent =
@@ -949,8 +1075,12 @@ async function showSaved() {
           ' · Precio: ' + money(item.unit_price) +
           ' · Total: ' + money(item.total);
 
-        detail.style.color = '#64748b';
-        detail.style.fontSize = '13px';
+        detail.style.cssText = `
+          color:#8492a6;
+          font-size:12px;
+          margin:6px 0 0;
+          line-height:1.6;
+        `;
 
         row.append(description, detail);
         toggle.appendChild(row);
